@@ -1,0 +1,62 @@
+syntax = "proto3";
+option go_package = "github.com/MelihEmreGuler/gRPC-streaming-service/instance/instancepb";
+
+package instancepb;
+import "google/protobuf/timestamp.proto";
+
+service instance {
+  rpc GetInstancesByRegion(GetInstancesByRegionRequest) returns (stream GetInstancesByRegionResponse) {}
+  rpc SendStatusUpdates(GetInstancesByRegionRequest) returns (stream StatusUpdate) {}
+}
+
+// information message about the status of the instance.
+message StatusUpdate {
+  string message = 1;
+}
+
+// Request message to get instances by region.
+message GetInstancesByRegionRequest {
+  string region = 1;
+}
+
+// Response message containing instances in a specific region.
+message GetInstancesByRegionResponse {
+  // List of instances in the specified region.
+  repeated Instance instances = 1;
+}
+
+// Instance message.
+message Instance {
+  int32 AmiLaunchIndex = 1;
+  ArchitectureValues Architecture = 2;
+  repeated InstanceBlockDeviceMapping BlockDeviceMappings = 3;
+}
+
+enum ArchitectureValues {
+  ARCHITECTURE_UNSPECIFIED = 0;
+  i386 = 1;
+  X86_64 = 2;
+  arm64 = 3;
+  x86_64_mac = 4;
+  arm64_mac = 5;
+}
+
+message InstanceBlockDeviceMapping {
+  string DeviceName = 1;
+  EbsInstanceBlockDevice Ebs = 2;
+}
+
+message EbsInstanceBlockDevice {
+  google.protobuf.Timestamp AttachTime = 1;
+  bool DeleteOnTermination = 2;
+  AttachmentStatus Status = 3;
+  string VolumeId = 4;
+}
+
+enum AttachmentStatus {
+  AttachmentStatus_UNSPECIFIED = 0;
+  attaching = 1;
+  attached = 2;
+  detaching = 3;
+  detached = 4;
+}
