@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"time"
 )
 
 var (
@@ -52,13 +53,26 @@ type instanceServer struct {
 	instances []*pb.Instance
 }
 
+// Create a channel to signal when instances are ready
+var instancesReadyCh = make(chan struct{})
+
 // GetInstancesByRegion returns the instances in the given region.
 func (s *instanceServer) GetInstancesByRegion(req *pb.GetInstancesByRegionRequest, stream pb.Instance_GetInstancesByRegionServer) error {
 	log.Printf("Received GetInstancesByRegion request from client: \n %+v\n", req)
+
+	// Simulate some work to retrieve instances (replace this with your actual logic)
+	go func() {
+		time.Sleep(1 * time.Second) // Simulate work
+		// When instances are ready, signal it
+		close(instancesReadyCh)
+	}()
+
 	err := stream.Send(&pb.GetInstancesByRegionResponse{Instances: s.instances})
 	if err != nil {
 		return err
 	}
+	// Wait for the instances to send to the client
+	<-instancesReadyCh
 	return nil
 }
 
@@ -70,8 +84,9 @@ func (s *instanceServer) SendStatusUpdates(req *pb.GetInstancesByRegionRequest, 
 		return err
 	}
 
-	//communicate with the GetInstancesByRegion service and wait here for to sending instances to client
-	//...
+	//communicate with the GetInstancesByRegion function and wait here until sending the instances to client
+	// Wait for instances to be ready
+	<-instancesReadyCh
 
 	// Notify the client that scanning is complete
 	statusUpdate = &pb.StatusUpdate{Message: "Scanning completed."}
